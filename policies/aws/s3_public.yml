@@ -1,0 +1,8 @@
+id: S3-PUBLIC-001
+title: S3 buckets should not be publicly accessible
+description: >
+  Detect buckets configured as public. Public buckets may leak data.
+provider: aws
+service: s3
+severity: HIGH
+query: $.buckets[*].public == true

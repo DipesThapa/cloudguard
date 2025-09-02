@@ -1,0 +1,12 @@
+{
+  "buckets": [
+    {
+      "name": "private-data",
+      "public": false
+    },
+    {
+      "name": "public-assets",
+      "public": true
+    }
+  ]
+}
