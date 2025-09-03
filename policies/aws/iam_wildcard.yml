@@ -1,0 +1,7 @@
+id: IAM-WILDCARD-001
+title: IAM policies should not use wildcards
+description: Detects '*' in Action or Resource within IAM policy statements.
+provider: aws
+service: iam
+severity: HIGH
+query: "$.iam_policies[*].statements[*].(Action|Resource) contains '*'"

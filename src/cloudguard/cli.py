@@ -26,6 +26,33 @@ def check_s3_public_buckets(inventory: dict) -> list[dict]:
     return findings
 
 
+def check_iam_wildcards(inventory: dict) -> list[dict]:
+    """Flag IAM policies that contain '*' in Action or Resource."""
+    findings = []
+    for pol in inventory.get("iam_policies", []):
+        name = pol.get("name", "<unknown>")
+        for stmt in pol.get("statements", []):
+            actions = stmt.get("Action") or stmt.get("Actions") or []
+            resources = stmt.get("Resource") or stmt.get("Resources") or []
+            if isinstance(actions, str):
+                actions = [actions]
+            if isinstance(resources, str):
+                resources = [resources]
+            wild_action = any(a == "*" or "*" in a for a in actions)
+            wild_res = any(r == "*" or "*" in r for r in resources)
+            if wild_action or wild_res:
+                findings.append(
+                    {
+                        "rule_id": "IAM-WILDCARD-001",
+                        "severity": "HIGH",
+                        "message": f"IAM wildcard detected in policy: {name}",
+                        "resource": name,
+                    }
+                )
+                break  # one finding per policy is enough
+    return findings
+
+
 def scan(provider: str, input_path: Path, policies_dir: Path) -> int:
     if provider != "aws":
         print(
@@ -35,7 +62,10 @@ def scan(provider: str, input_path: Path, policies_dir: Path) -> int:
         return 2
 
     inventory = load_inventory(input_path)
-    findings = check_s3_public_buckets(inventory)
+
+    findings = []
+    findings.extend(check_s3_public_buckets(inventory))
+    findings.extend(check_iam_wildcards(inventory))
 
     for f in findings:
         print(f"[{f['rule_id']}] {f['message']}")

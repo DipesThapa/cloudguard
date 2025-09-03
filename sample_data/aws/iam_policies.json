@@ -1,0 +1,6 @@
+{
+  "iam_policies": [
+    { "name": "AllowAll", "statements": [{ "Action": "*", "Resource": "*" }] },
+    { "name": "ReadOnlyS3", "statements": [{ "Action": ["s3:GetObject"], "Resource": "arn:aws:s3:::private-data/*" }] }
+  ]
+}
