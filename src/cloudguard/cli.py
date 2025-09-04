@@ -53,7 +53,6 @@ def check_iam_wildcards(inventory: dict) -> list[dict]:
     return findings
 
 
-
 def render_html(findings: list[dict], out_path: Path) -> None:
     """Write a simple HTML report (lines wrapped for flake8 E501)."""
     rows = "\n".join(
@@ -90,6 +89,8 @@ def render_html(findings: list[dict], out_path: Path) -> None:
     ]
     html = "\n".join(parts)
     out_path.write_text(html)
+
+
 def scan(provider: str, input_path: Path, policies_dir: Path) -> int:
     if provider != "aws":
         print(
