@@ -1,3 +1,10 @@
+## Docker
+Run the scanner in a container:
+```
+docker run --rm ghcr.io/dipesthapa/cloudguard:latest \
+  scan --provider aws --input /data/iam_policies.json --policies /app/policies/aws
+```
+
 # CloudGuard — Compliance‑as‑Code scanner (MVP)
 
 CloudGuard is a lightweight, open-source **Compliance‑as‑Code** scanner. The MVP runs locally and scans JSON inventory to flag common misconfigurations (starting with **AWS S3 public buckets**). It’s designed to expand into real cloud APIs and formal policy engines.
