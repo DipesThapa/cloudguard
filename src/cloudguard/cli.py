@@ -6,26 +6,11 @@ from __future__ import annotations
 
 import argparse
 import json
-from dataclasses import dataclass, asdict
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Iterable, List
 
 from . import __version__
-
-
-# ----------------------------- data models --------------------------------- #
-
-@dataclass
-class Finding:
-    rule_id: str
-    title: str
-    severity: str
-    resource: str
-    details: str
-
-    def to_dict(self) -> Dict[str, Any]:
-        return asdict(self)
 
 
 # --------------------------- helpers / io ---------------------------------- #
@@ -39,28 +24,25 @@ def load_inventory(input_path: str | Path) -> Dict[str, Any]:
 
 # ------------------------------- checks ------------------------------------ #
 
-def check_s3_public_buckets(inv: Dict[str, Any]) -> List[Finding]:
-    """Flag S3 buckets that are publicly accessible."""
+def check_s3_public_buckets(inv: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """Flag S3 buckets that are publicly accessible (returns list of dicts)."""
     buckets = inv.get("buckets") or inv.get("Buckets") or []
-    out: List[Finding] = []
+    out: List[Dict[str, Any]] = []
     for b in buckets:
         name = str(b.get("name") or b.get("Name") or "unknown")
-        public = bool(b.get("public") or b.get("Public"))
+        public = bool(b.get("public") or b.get("Public") or b.get("isPublic"))
         if public:
-            out.append(
-                Finding(
-                    rule_id="S3-PUBLIC-001",
-                    title="S3 bucket is publicly accessible",
-                    severity="HIGH",
-                    resource=f"s3://{name}",
-                    details="Bucket marked as public in inventory.",
-                )
-            )
+            out.append({
+                "rule_id": "S3-PUBLIC-001",
+                "severity": "HIGH",
+                "resource": name,
+                "message": f"Public bucket detected: {name}",
+            })
     return out
 
 
 def _stmt_has_wildcard_action(stmt: Dict[str, Any]) -> bool:
-    """Return True if an IAM statement contains Action == * (or list with *)."""
+    """True if an IAM statement contains Action == * (or list with *)."""
     action = stmt.get("Action")
     if action == "*":
         return True
@@ -69,62 +51,85 @@ def _stmt_has_wildcard_action(stmt: Dict[str, Any]) -> bool:
     return False
 
 
-def check_iam_wildcards(inv: Dict[str, Any]) -> List[Finding]:
-    """Flag IAM policies that allow wildcard actions."""
-    policies = inv.get("policies") or []
-    out: List[Finding] = []
+def check_iam_wildcards(inv: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """
+    Flag IAM policies that allow wildcard actions.
+
+    Accepts either of these shapes:
+      {"iam_policies": [{"name": "...", "statements": [...] }]}
+      {"policies": [{"name": "...", "document": {"Statement": [...]}}]}
+    """
+    policies = inv.get("iam_policies") or inv.get("policies") or []
+    out: List[Dict[str, Any]] = []
     for p in policies:
         name = str(p.get("name", "policy"))
-        doc = p.get("document") or {}
-        stmts: Iterable[Dict[str, Any]] = doc.get("Statement") or []
+        stmts: Iterable[Dict[str, Any]] = (
+            p.get("statements")
+            or (p.get("document") or {}).get("Statement")
+            or []
+        )
         if any(_stmt_has_wildcard_action(s) for s in stmts):
-            out.append(
-                Finding(
-                    rule_id="IAM-WILDCARD-001",
-                    title="IAM policy allows wildcard actions",
-                    severity="HIGH",
-                    resource=name,
-                    details="Statement.Action contains '*'.",
-                )
-            )
+            out.append({
+                "rule_id": "IAM-WILDCARD-001",
+                "severity": "HIGH",
+                "resource": name,
+                "message": "Policy allows wildcard actions",
+            })
     return out
 
 
 # ------------------------------- reports ----------------------------------- #
 
-def render_html(findings: List[Finding], out_path: str | Path) -> None:
+def _get(d: Any, key: str) -> Any:
+    """dict-or-object accessor."""
+    if isinstance(d, dict):
+        return d.get(key)
+    return getattr(d, key, None)
+
+
+def render_html(findings: List[Dict[str, Any]], out_path: str | Path) -> None:
     """Write a tiny self-contained HTML report."""
     out = Path(out_path)
     rows = []
     for f in findings:
+        rule_id = _get(f, "rule_id") or ""
+        severity = _get(f, "severity") or ""
+        resource = _get(f, "resource") or ""
+        message = (
+            _get(f, "message") or _get(f, "title") or _get(f, "details") or ""
+        )
         rows.append(
             "<tr>"
-            f"<td>{f.rule_id}</td>"
-            f"<td>{f.severity}</td>"
-            f"<td>{f.resource}</td>"
-            f"<td>{f.title}</td>"
+            f"<td>{rule_id}</td>"
+            f"<td>{severity}</td>"
+            f"<td>{resource}</td>"
+            f"<td>{message}</td>"
             "</tr>"
         )
     rows_html = "\n".join(rows)
     now = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
+
+    styles = (
+        "body{font-family:system-ui;margin:24px}"
+        "table{border-collapse:collapse;width:100%}"
+        "th,td{border:1px solid #e5e7eb;padding:8px;text-align:left}"
+        "th{background:#f3f4f6}"
+        ".badge{display:inline-block;padding:2px 8px;"
+        "border-radius:999px;background:#eef}"
+    )
+
     html = (
         "<!doctype html>\n"
         "<html><head><meta charset=\"utf-8\">\n"
         "<title>CloudGuard Report</title>\n"
-        "<style>\n"
-        "body{font-family:system-ui;margin:24px}\n"
-        "table{border-collapse:collapse;width:100%}\n"
-        "th,td{border:1px solid #e5e7eb;padding:8px;text-align:left}\n"
-        "th{background:#f3f4f6}\n"
-        ".badge{display:inline-block;padding:2px 8px;border-radius:999px;"
-        "background:#eef}\n"
-        "</style></head>\n"
+        f"<style>{styles}</style></head>\n"
         "<body>\n"
-        f"<h1>CloudGuard Report <span class=\"badge\">v{__version__}</span></h1>\n"
+        "<h1>CloudGuard Report "
+        f"<span class=\"badge\">v{__version__}</span></h1>\n"
         f"<p>Generated: {now}</p>\n"
         "<table>\n"
         "<thead><tr><th>Rule</th><th>Severity</th>"
-        "<th>Resource</th><th>Title</th></tr></thead>\n"
+        "<th>Resource</th><th>Message</th></tr></thead>\n"
         "<tbody>\n"
         f"{rows_html}\n"
         "</tbody>\n"
@@ -136,15 +141,13 @@ def render_html(findings: List[Finding], out_path: str | Path) -> None:
 
 # ------------------------------- pipeline ---------------------------------- #
 
-def scan(args: argparse.Namespace) -> List[Finding]:
+def scan(args: argparse.Namespace) -> List[Dict[str, Any]]:
     """Load inventory and run enabled checks."""
     inv = load_inventory(args.input)
-    findings: List[Finding] = []
-
+    findings: List[Dict[str, Any]] = []
     if args.provider.lower() == "aws":
         findings.extend(check_s3_public_buckets(inv))
         findings.extend(check_iam_wildcards(inv))
-
     return findings
 
 
