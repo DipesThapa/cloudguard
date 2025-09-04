@@ -53,30 +53,43 @@ def check_iam_wildcards(inventory: dict) -> list[dict]:
     return findings
 
 
+
 def render_html(findings: list[dict], out_path: Path) -> None:
-    """Write a very simple HTML report."""
+    """Write a simple HTML report (lines wrapped for flake8 E501)."""
     rows = "\n".join(
-        f"<tr><td>{f['severity']}</td><td>{f['rule_id']}</td>"
-        f"<td>{f['resource']}</td><td>{f['message']}</td></tr>"
+        (
+            "<tr>"
+            f"<td>{f['severity']}</td>"
+            f"<td>{f['rule_id']}</td>"
+            f"<td>{f['resource']}</td>"
+            f"<td>{f['message']}</td>"
+            "</tr>"
+        )
         for f in findings
     )
-    html = f"""<!doctype html>
-<html><head><meta charset='utf-8'><title>CloudGuard Report</title>
-<style>
-body{{font-family:system-ui;margin:24px}} table{{border-collapse:collapse;width:100%}}
-th,td{{border:1px solid #ddd;padding:8px}} th{{background:#f5f5f5;text-align:left}}
-.sev-HIGH{{color:#a00;font-weight:600}}
-</style></head><body>
-<h2>CloudGuard Report</h2>
-<p>Findings: {len(findings)}</p>
-<table>
-<thead><tr><th>Severity</th><th>Rule</th><th>Resource</th><th>Message</th></tr></thead>
-<tbody>{rows}</tbody>
-</table>
-</body></html>"""
-    Path(out_path).write_text(html)
 
-
+    parts = [
+        "<!doctype html>",
+        "<html><head><meta charset='utf-8'><title>CloudGuard Report</title>",
+        "<style>",
+        "body{font-family:system-ui;margin:24px}",
+        "table{border-collapse:collapse;width:100%}",
+        "th,td{border:1px solid #ddd;padding:8px}",
+        "th{background:#f5f5f5;text-align:left}",
+        ".sev-HIGH{color:#a00;font-weight:600}",
+        "</style></head><body>",
+        "<h2>CloudGuard Report</h2>",
+        f"<p>Findings: {len(findings)}</p>",
+        "<table>",
+        "<thead><tr>",
+        "<th>Severity</th><th>Rule</th><th>Resource</th><th>Message</th>",
+        "</tr></thead>",
+        f"<tbody>{rows}</tbody>",
+        "</table>",
+        "</body></html>",
+    ]
+    html = "\n".join(parts)
+    out_path.write_text(html)
 def scan(provider: str, input_path: Path, policies_dir: Path) -> int:
     if provider != "aws":
         print(
