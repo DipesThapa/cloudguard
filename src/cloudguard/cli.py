@@ -1,3 +1,4 @@
+from . import __version__
 import argparse
 import json
 import sys
@@ -113,6 +114,11 @@ def scan(provider: str, input_path: Path, policies_dir: Path) -> int:
 
 def main():
     parser = argparse.ArgumentParser(
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"CloudGuard v{__version__}",
+    )
     parser.add_argument("--version", action="version", version="CloudGuard v0.2.0")
         prog="cloudguard",
         description="Compliance-as-Code scanner (MVP)",
