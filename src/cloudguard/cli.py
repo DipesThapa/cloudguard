@@ -1,8 +1,9 @@
-from . import __version__
+/from /. import __version__
 import argparse
 import json
 import sys
 from pathlib import Path
+from . import __version__
 
 
 def load_inventory(path: Path) -> dict:
