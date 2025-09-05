@@ -63,3 +63,9 @@ Please see [SECURITY.md](SECURITY.md) for how to report vulnerabilities.
 
 ## Contributing
 See [CONTRIBUTING.md](CONTRIBUTING.md). Be kind — we follow the [Code of Conduct](CODE_OF_CONDUCT.md).
+
+## Getting Started
+1. Clone this repo
+2. Run `make install`
+3. Start with `make dev`
+
