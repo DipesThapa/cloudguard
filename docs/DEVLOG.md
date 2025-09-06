@@ -6,3 +6,6 @@
 - Added Getting Started guide
 - Added PR Template
 - Opened and merged PRs for docs improvements
+
+## 2025-09-06
+- Added test instructions to README
