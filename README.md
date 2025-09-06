@@ -69,3 +69,8 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). Be kind — we follow the [Code of Condu
 2. Run `make install`
 3. Start with `make dev`
 
+
+## Running Tests
+
+
+
