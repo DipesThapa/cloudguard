@@ -9,7 +9,7 @@ import json
 from datetime import UTC, datetime
 from html import escape
 from pathlib import Path
-from typing import Any, Dict, Iterable, List
+from typing import Any, Dict, List
 
 try:  # Allow running as a script without package context
     from . import __version__  # type: ignore
@@ -18,7 +18,10 @@ except Exception:  # pragma: no cover - fallback for direct execution
         from importlib.machinery import SourceFileLoader
         from pathlib import Path as _Path
         _init_path = _Path(__file__).with_name("__init__.py")
-        _mod = SourceFileLoader("cloudguard_init", str(_init_path)).load_module()
+        _mod = SourceFileLoader(
+            "cloudguard_init",
+            str(_init_path),
+        ).load_module()
         __version__ = getattr(_mod, "__version__", "0.0.0")
     except Exception:
         __version__ = "0.0.0"
@@ -41,7 +44,8 @@ def load_inventory(input_path: str | Path) -> Dict[str, Any]:
 def to_bool(v: Any) -> bool:
     """Conservatively coerce common truthy values to bool.
 
-    Accepts booleans, numbers, and common strings like 'true', 'yes', '1', 'on'.
+    Accepts booleans, numbers, and common strings like 'true',
+    'yes', '1', or 'on'.
     """
     if isinstance(v, bool):
         return v
@@ -132,7 +136,12 @@ def render_html(findings: List[Dict[str, Any]], out_path: str | Path) -> None:
         severity = escape(str(_get(f, "severity") or ""))
         resource = escape(str(_get(f, "resource") or ""))
         message = escape(
-            str(_get(f, "message") or _get(f, "title") or _get(f, "details") or "")
+            str(
+                _get(f, "message")
+                or _get(f, "title")
+                or _get(f, "details")
+                or ""
+            )
         )
         rows.append(
             "<tr>"
