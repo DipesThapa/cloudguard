@@ -6,20 +6,50 @@ from __future__ import annotations
 
 import argparse
 import json
-from datetime import datetime
+from datetime import UTC, datetime
+from html import escape
 from pathlib import Path
 from typing import Any, Dict, Iterable, List
 
-from . import __version__
+try:  # Allow running as a script without package context
+    from . import __version__  # type: ignore
+except Exception:  # pragma: no cover - fallback for direct execution
+    try:
+        from importlib.machinery import SourceFileLoader
+        from pathlib import Path as _Path
+        _init_path = _Path(__file__).with_name("__init__.py")
+        _mod = SourceFileLoader("cloudguard_init", str(_init_path)).load_module()
+        __version__ = getattr(_mod, "__version__", "0.0.0")
+    except Exception:
+        __version__ = "0.0.0"
 
 
 # --------------------------- helpers / io ---------------------------------- #
 
 def load_inventory(input_path: str | Path) -> Dict[str, Any]:
-    """Load inventory JSON (UTF-8)."""
+    """Load inventory JSON (UTF-8) with friendly error messages."""
     path = Path(input_path)
-    with path.open("r", encoding="utf-8") as f:
-        return json.load(f)
+    try:
+        with path.open("r", encoding="utf-8") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        raise SystemExit(f"[error] Inventory file not found: {path}")
+    except json.JSONDecodeError as e:
+        raise SystemExit(f"[error] Invalid JSON in {path}: {e}")
+
+
+def to_bool(v: Any) -> bool:
+    """Conservatively coerce common truthy values to bool.
+
+    Accepts booleans, numbers, and common strings like 'true', 'yes', '1', 'on'.
+    """
+    if isinstance(v, bool):
+        return v
+    if isinstance(v, (int, float)):
+        return v != 0
+    if isinstance(v, str):
+        return v.strip().lower() in {"true", "yes", "y", "1", "on"}
+    return False
 
 
 # ------------------------------- checks ------------------------------------ #
@@ -30,7 +60,9 @@ def check_s3_public_buckets(inv: Dict[str, Any]) -> List[Dict[str, Any]]:
     out: List[Dict[str, Any]] = []
     for b in buckets:
         name = str(b.get("name") or b.get("Name") or "unknown")
-        public = bool(b.get("public") or b.get("Public") or b.get("isPublic"))
+        public = any(
+            to_bool(b.get(k)) for k in ("public", "Public", "isPublic")
+        )
         if public:
             out.append({
                 "rule_id": "S3-PUBLIC-001",
@@ -63,11 +95,15 @@ def check_iam_wildcards(inv: Dict[str, Any]) -> List[Dict[str, Any]]:
     out: List[Dict[str, Any]] = []
     for p in policies:
         name = str(p.get("name", "policy"))
-        stmts: Iterable[Dict[str, Any]] = (
+        stmts_raw: Any = (
             p.get("statements")
             or (p.get("document") or {}).get("Statement")
             or []
         )
+        if isinstance(stmts_raw, dict):
+            stmts = [stmts_raw]
+        else:
+            stmts = list(stmts_raw or [])
         if any(_stmt_has_wildcard_action(s) for s in stmts):
             out.append({
                 "rule_id": "IAM-WILDCARD-001",
@@ -92,11 +128,11 @@ def render_html(findings: List[Dict[str, Any]], out_path: str | Path) -> None:
     out = Path(out_path)
     rows = []
     for f in findings:
-        rule_id = _get(f, "rule_id") or ""
-        severity = _get(f, "severity") or ""
-        resource = _get(f, "resource") or ""
-        message = (
-            _get(f, "message") or _get(f, "title") or _get(f, "details") or ""
+        rule_id = escape(str(_get(f, "rule_id") or ""))
+        severity = escape(str(_get(f, "severity") or ""))
+        resource = escape(str(_get(f, "resource") or ""))
+        message = escape(
+            str(_get(f, "message") or _get(f, "title") or _get(f, "details") or "")
         )
         rows.append(
             "<tr>"
@@ -107,7 +143,7 @@ def render_html(findings: List[Dict[str, Any]], out_path: str | Path) -> None:
             "</tr>"
         )
     rows_html = "\n".join(rows)
-    now = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
+    now = datetime.now(UTC).strftime("%Y-%m-%d %H:%M UTC")
 
     styles = (
         "body{font-family:system-ui;margin:24px}"
@@ -136,6 +172,7 @@ def render_html(findings: List[Dict[str, Any]], out_path: str | Path) -> None:
         "</table>\n"
         "</body></html>\n"
     )
+    out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(html, encoding="utf-8")
 
 
