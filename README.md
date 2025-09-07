@@ -55,6 +55,9 @@ docs/                  # architecture, threat model
 .github/workflows/     # CI
 ```
 
+## Guides
+- Secure by Default — CloudGuard for UK SMEs: docs/secure-by-default-uk-smes.md
+
 ## License
 MIT — see [LICENSE](LICENSE).
 
@@ -71,6 +74,5 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). Be kind — we follow the [Code of Condu
 
 
 ## Running Tests
-
 
 

@@ -6,3 +6,6 @@
 - **Findings** printed to stdout; process exits **1** if any failed findings.
 
 This modular layout allows swapping the inventory reader for live SDK calls.
+
+See also
+- Secure by Default guide for UK SMEs: ../docs/secure-by-default-uk-smes.md
