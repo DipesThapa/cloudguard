@@ -11,10 +11,15 @@ docker run --rm ghcr.io/dipesthapa/cloudguard:latest \
 ![Daily](https://github.com/dipesthapa/cloudguard/actions/workflows/daily.yml/badge.svg)
 ![CodeQL](https://github.com/dipesthapa/cloudguard/actions/workflows/codeql.yml/badge.svg)
 ![Docker](https://github.com/dipesthapa/cloudguard/actions/workflows/docker.yml/badge.svg)
+![Pre-commit](https://github.com/dipesthapa/cloudguard/actions/workflows/pre-commit.yml/badge.svg)
+![Pages](https://github.com/dipesthapa/cloudguard/actions/workflows/pages.yml/badge.svg)
 
 ## Project Metrics
 - Streak: <!-- METRICS:STREAK_START -->1<!-- METRICS:STREAK_END --> days
 - Total Time: <!-- METRICS:TIME_START -->0h 30m<!-- METRICS:TIME_END -->
+
+## Live Report
+- GitHub Pages: https://dipesthapa.github.io/cloudguard/
 
 CloudGuard is a lightweight, open-source **Compliance‑as‑Code** scanner. The MVP runs locally and scans JSON inventory to flag common misconfigurations (starting with **AWS S3 public buckets**). It’s designed to expand into real cloud APIs and formal policy engines.
 
@@ -83,3 +88,15 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). Be kind — we follow the [Code of Condu
 
 
 ## Running Tests
+
+
+## Automation
+- Daily maintenance and metrics: `.github/workflows/daily.yml`
+- CI with coverage + Bandit: `.github/workflows/ci.yml`
+- Dependabot weekly updates: `.github/dependabot.yml`
+- Auto-merge deps PRs: `.github/workflows/automerge.yml`
+- Conventional PR titles: `.github/workflows/semantic-pr.yml`
+- Pre-commit checks: `.github/workflows/pre-commit.yml` and `.pre-commit-config.yaml`
+- CodeQL security scan: `.github/workflows/codeql.yml`
+- Release automation: `.github/workflows/release-please.yml`
+- Pages publish of report: `.github/workflows/pages.yml`
