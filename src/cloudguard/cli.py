@@ -187,6 +187,7 @@ def render_html(findings: List[Dict[str, Any]], out_path: str | Path) -> None:
 
 # ------------------------------- pipeline ---------------------------------- #
 
+
 def scan(args: argparse.Namespace) -> List[Dict[str, Any]]:
     """Load inventory and run enabled checks."""
     inv = load_inventory(args.input)
@@ -198,6 +199,7 @@ def scan(args: argparse.Namespace) -> List[Dict[str, Any]]:
 
 
 # --------------------------------- cli ------------------------------------- #
+
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(

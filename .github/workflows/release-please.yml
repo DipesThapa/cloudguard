@@ -1,8 +1,9 @@
 name: Release Please
 
 on:
-  push:
-    branches: [ main ]
+  workflow_dispatch: {}
+  schedule:
+    - cron: '0 7 * * 1' # Mondays 07:00 UTC
 
 permissions:
   contents: write
@@ -11,9 +12,9 @@ permissions:
 jobs:
   release-please:
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
-      - uses: google-github-actions/release-please-action@v4
+      - uses: googleapis/release-please-action@v4
         with:
           release-type: simple
-          package-name: cloudguard
-
+          repo-url: ${{ github.repository }}

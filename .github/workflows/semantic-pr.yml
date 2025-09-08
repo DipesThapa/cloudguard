@@ -1,23 +1,22 @@
 name: Conventional PR Title
 
 on:
-  pull_request_target:
+  pull_request:
     types: [opened, edited, synchronize]
 
-permissions:
-  pull-requests: read
+permissions: {}
 
 jobs:
   lint-title:
     runs-on: ubuntu-latest
     steps:
-      - uses: amannn/action-semantic-pull-request@v5
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          types: >-
-            feat, fix, chore, docs, refactor, test, build, ci, perf, style
-          requireScope: false
-          subjectPattern: 
-          wip: true
-
+      - name: Validate PR title
+        run: |
+          TITLE='${{ github.event.pull_request.title }}'
+          echo "PR title: $TITLE"
+          if echo "$TITLE" | grep -Eq '^(feat|fix|chore|docs|refactor|test|build|ci|perf|style)(\(.*\))?: .+'; then
+            echo "Title is conventional."
+          else
+            echo "Invalid PR title. Use Conventional Commits, e.g., 'fix: short summary'" >&2
+            exit 1
+          fi

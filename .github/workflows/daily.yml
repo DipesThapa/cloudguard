@@ -4,6 +4,10 @@ on:
   schedule:
     - cron: '0 9 * * *' # every day at 09:00 UTC
   workflow_dispatch: {}
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/daily.yml'
 
 permissions:
   contents: write
