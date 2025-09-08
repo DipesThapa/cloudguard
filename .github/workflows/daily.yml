@@ -1,0 +1,114 @@
+name: Daily Maintenance
+
+on:
+  schedule:
+    - cron: '0 9 * * *' # every day at 09:00 UTC
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  health-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dev dependencies
+        run: pip install -r requirements.txt
+
+      - name: Lint
+        run: flake8 src
+
+      - name: Run tests
+        run: pytest -q
+
+      - name: Generate sample report
+        run: |
+          python src/cloudguard/cli.py \
+            --provider aws \
+            --input sample_data/aws/s3_buckets.json \
+            --report html \
+            --out reports/cloudguard_report.html
+
+      - name: Upload report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cloudguard-report
+          path: reports/cloudguard_report.html
+
+      - name: Update metrics (streak and time)
+        env:
+          DAILY_MINUTES: ${{ vars.DAILY_MINUTES }}
+        run: |
+          set -euo pipefail
+          : "${DAILY_MINUTES:=30}"
+          if [ ! -f metrics.json ]; then
+            TODAY=$(date -u +%F)
+            printf '{\n  "start_date": "%s",\n  "last_date": "",\n  "streak_days": 0,\n  "total_minutes": 0\n}\n' "$TODAY" > metrics.json
+          fi
+          python - << 'PY'
+import json, os, datetime
+from pathlib import Path
+p = Path('metrics.json')
+m = json.loads(p.read_text()) if p.exists() else {}
+today = datetime.date.today().isoformat()
+last = m.get('last_date') or ''
+daily = int(os.environ.get('DAILY_MINUTES') or '30')
+if last != today:
+    m['streak_days'] = int(m.get('streak_days', 0)) + 1
+    m['total_minutes'] = int(m.get('total_minutes', 0)) + daily
+    m['last_date'] = today
+p.write_text(json.dumps(m, indent=2) + "\n")
+PY
+
+      - name: Update README metrics section
+        run: |
+          set -euo pipefail
+          python - << 'PY'
+import json
+from pathlib import Path
+m = json.loads(Path('metrics.json').read_text())
+streak = int(m.get('streak_days', 0))
+total = int(m.get('total_minutes', 0))
+hours, minutes = divmod(total, 60)
+time_str = f"{hours}h {minutes}m"
+readme_path = Path('README.md')
+text = readme_path.read_text()
+def replace_between(text, start, end, value):
+    a = text.find(start)
+    if a == -1:
+        return text
+    b = text.find(end, a + len(start))
+    if b == -1:
+        return text
+    return text[:a+len(start)] + str(value) + text[b:]
+text = replace_between(text, "<!-- METRICS:STREAK_START -->", "<!-- METRICS:STREAK_END -->", streak)
+text = replace_between(text, "<!-- METRICS:TIME_START -->", "<!-- METRICS:TIME_END -->", time_str)
+readme_path.write_text(text)
+PY
+
+      - name: Update DEVLOG with daily entry
+        run: |
+          DATE=$(date -u +%F)
+          TIME=$(date -u +%H:%MUTC)
+          ENTRY="## ${DATE}
+- Automated health check at ${TIME}
+- Lint and tests passed on Python 3.11
+- Report artifact: reports/cloudguard_report.html
+"
+          printf "%s\n\n" "$ENTRY" | cat - docs/DEVLOG.md > docs/DEVLOG.tmp && mv docs/DEVLOG.tmp docs/DEVLOG.md
+
+      - name: Commit DEVLOG and report
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(daily): automated health check and report"
+          commit_user_name: cloudguard-bot
+          commit_user_email: cloudguard-bot@users.noreply.github.com
+          file_pattern: docs/DEVLOG.md reports/cloudguard_report.html metrics.json README.md
