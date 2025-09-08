@@ -14,8 +14,17 @@ jobs:
         with:
           python-version: '3.11'
       - name: Install dev deps
-        run: pip install -r requirements.txt
+        run: |
+          pip install -r requirements.txt
+          pip install bandit pytest-cov
       - name: Lint
         run: flake8 src
-      - name: Tests
-        run: pytest -q
+      - name: Tests with coverage
+        run: pytest -q --cov=src --cov-report=xml --cov-report=term
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-xml
+          path: coverage.xml
+      - name: Bandit security scan
+        run: bandit -q -r src -f txt

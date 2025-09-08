@@ -1,0 +1,38 @@
+name: Publish Report to Pages
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'reports/cloudguard_report.html'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: 'pages'
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare site
+        run: |
+          mkdir -p site
+          cp reports/cloudguard_report.html site/index.html
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - name: Deploy to Pages
+        uses: actions/deploy-pages@v4
+
