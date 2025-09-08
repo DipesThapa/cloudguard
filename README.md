@@ -7,6 +7,15 @@ docker run --rm ghcr.io/dipesthapa/cloudguard:latest \
 
 # CloudGuard — Compliance‑as‑Code scanner (MVP)
 
+![CI](https://github.com/dipesthapa/cloudguard/actions/workflows/ci.yml/badge.svg)
+![Daily](https://github.com/dipesthapa/cloudguard/actions/workflows/daily.yml/badge.svg)
+![CodeQL](https://github.com/dipesthapa/cloudguard/actions/workflows/codeql.yml/badge.svg)
+![Docker](https://github.com/dipesthapa/cloudguard/actions/workflows/docker.yml/badge.svg)
+
+## Project Metrics
+- Streak: <!-- METRICS:STREAK_START -->1<!-- METRICS:STREAK_END --> days
+- Total Time: <!-- METRICS:TIME_START -->0h 30m<!-- METRICS:TIME_END -->
+
 CloudGuard is a lightweight, open-source **Compliance‑as‑Code** scanner. The MVP runs locally and scans JSON inventory to flag common misconfigurations (starting with **AWS S3 public buckets**). It’s designed to expand into real cloud APIs and formal policy engines.
 
 > Goal: provide a product‑led, public impact project suitable for Global Talent evidence (innovation + contribution), while being genuinely useful for UK SMEs/charities.
@@ -74,5 +83,3 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). Be kind — we follow the [Code of Condu
 
 
 ## Running Tests
-
-
