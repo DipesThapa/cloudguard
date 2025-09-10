@@ -1,5 +1,5 @@
-import json
 from src.cloudguard.cli import check_s3_public_buckets
+
 
 def test_public_bucket_finding():
     inv = {"buckets": [

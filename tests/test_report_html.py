@@ -1,5 +1,5 @@
-from pathlib import Path
 from src.cloudguard.cli import render_html
+
 
 def test_render_html_creates_file(tmp_path):
     findings = [{
