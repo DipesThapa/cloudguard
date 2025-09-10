@@ -35,15 +35,16 @@ The command exits **1** when any failing finding is detected (useful in CI).
 
 ## Features (MVP)
 - Offline JSON scan (no credentials required)
-- One policy: **S3 public bucket** detection
-- Human‑readable output + non‑zero exit on fail
-- Ready for CI (flake8 + pytest)
+- Rules: **S3 public bucket** and **IAM wildcard actions**
+- HTML report output (`--report html`)
+- Human‑readable findings + non‑zero exit on fail
+- Linting and tests (flake8 + pytest), CI workflow included
 
 ## Roadmap
 - [ ] Real AWS inventory via `boto3` (optional profile)
 - [ ] Policy DSL or OPA/Rego integration
-- [ ] HTML/JSON/SARIF reporting
-- [ ] More rules (IAM `*`, SG `0.0.0.0/0`, RDS snapshots)
+- [ ] JSON/SARIF reporting for CI systems
+- [ ] More rules (SG `0.0.0.0/0`, RDS snapshots, KMS policies)
 
 ## Repository layout
 ```
@@ -52,7 +53,7 @@ policies/aws/          # YAML policies (MVP: S3 public)
 sample_data/aws/       # example inventory to test offline
 tests/                 # pytest tests
 docs/                  # architecture, threat model
-.github/workflows/     # CI
+.github/workflows/     # CI (lint + tests + sample reports)
 ```
 
 ## Guides
@@ -69,10 +70,24 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). Be kind — we follow the [Code of Condu
 
 ## Getting Started
 1. Clone this repo
-2. Run `make install`
-3. Start with `make dev`
+2. Install and run checks: `make dev`
+3. Generate sample reports: `make reports`
 
 
 ## Running Tests
+- With Makefile: `make test`
+- Manually:
+  - `python3 -m venv .venv && source .venv/bin/activate`
+  - `pip install -r requirements.txt`
+  - `pytest -q`
 
+## Project docs
+- Architecture: `docs/architecture.md`
+- Threat model: `docs/threat-model.md`
+- Secure by Default for UK SMEs (draft): `docs/secure-by-default-uk-smes.md`
+- Dev log: `docs/DEVLOG.md`
 
+## Credibility & roadmap
+- CI: GitHub Actions workflow runs lint and tests on pushes and PRs.
+- Tests: See `tests/` for CLI, rules, and HTML report coverage.
+- Changelog: See `CHANGELOG.md` for release notes.

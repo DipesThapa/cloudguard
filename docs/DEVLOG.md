@@ -1,7 +1,9 @@
-## DEVLOG – $(date +%F)
+## DEVLOG
 
-- **Time spent:** approx. 10 min
-- **Summary:** Quick placeholder entry for today’s update.
+### 2025-09-10
+- Added GitHub Actions CI (lint, tests, sample reports)
+- Added Makefile (`make dev`, `make test`, `make reports`)
+- Updated README (features, roadmap, docs, test instructions)
 ## 2025-09-05
 - Added Getting Started guide
 - Added PR Template
